@@ -2,52 +2,34 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class CNNAutoencoder1D(nn.Module):
+class CustomModel(nn.Module):
     def __init__(self):
-        super(CNNAutoencoder1D, self).__init__()
+        super(CustomModel, self).__init__()
 
-        # Encoder
+        # Encoder: [B, 64, 44] → [B, 512, 6]
         self.encoder = nn.Sequential(
-            nn.Conv1d(64, 128, kernel_size=3, padding=1),  # [B, 128, 258]
+            nn.Conv1d(64, 128, kernel_size=3, stride=2, padding=1),   # [B, 128, 22]
             nn.ReLU(),
-            nn.BatchNorm1d(128),
-            nn.MaxPool1d(2),                               # [B, 128, 129]
-
-            nn.Conv1d(128, 256, kernel_size=3, padding=1), # [B, 256, 129]
+            nn.Conv1d(128, 256, kernel_size=3, stride=2, padding=1),  # [B, 256, 11]
             nn.ReLU(),
-            nn.BatchNorm1d(256),
-            nn.MaxPool1d(2),                               # [B, 256, 64]
-
-            nn.Conv1d(256, 512, kernel_size=3, padding=1), # [B, 512, 64]
+            nn.Conv1d(256, 512, kernel_size=3, stride=2, padding=1),  # [B, 512, 6]
             nn.ReLU(),
-            nn.BatchNorm1d(512),
-            nn.MaxPool1d(2),                               # [B, 512, 32]
         )
 
-        # Decoder
+        # Decoder: [B, 512, 6] → [B, 64, 44]
         self.decoder = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='nearest'),   # [B, 512, 64]
-            nn.Conv1d(512, 256, kernel_size=3, padding=1),
+            nn.ConvTranspose1d(512, 256, kernel_size=4, stride=2, padding=1),  # [B, 256, 12]
             nn.ReLU(),
-            nn.BatchNorm1d(256),
-
-            nn.Upsample(scale_factor=2, mode='nearest'),   # [B, 256, 128]
-            nn.Conv1d(256, 128, kernel_size=3, padding=1),
+            nn.ConvTranspose1d(256, 128, kernel_size=4, stride=2, padding=1),  # [B, 128, 24]
             nn.ReLU(),
-            nn.BatchNorm1d(128),
-
-            nn.Upsample(scale_factor=2, mode='nearest'),   # [B, 128, 256]
-            nn.Conv1d(128, 64, kernel_size=3, padding=1),  # [B, 64, 256]
+            nn.ConvTranspose1d(128, 64, kernel_size=4, stride=2, padding=1),   # [B, 64, 48]
+            nn.Sigmoid()  # [0, 1] 범위에 맞춰서 출력
         )
 
     def forward(self, x):
         encoded = self.encoder(x)
         decoded = self.decoder(encoded)
 
-        # output size: [B, 64, 256] -> pad to 258
-        if decoded.shape[-1] < 258:
-            decoded = F.pad(decoded, (0, 258 - decoded.shape[-1]))
-        elif decoded.shape[-1] > 258:
-            decoded = decoded[..., :258]
-
+        # 출력 시 원래 크기 [B, 64, 44]로 자르기
+        decoded = decoded[:, :, :44]
         return decoded

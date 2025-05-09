@@ -1,5 +1,5 @@
 from dataset import AudioMelDataset
-from model import CNNAutoencoder1D
+from model import CustomModel
 import torch
 import torchaudio
 from tqdm import tqdm
@@ -31,7 +31,7 @@ val_dataset = AudioMelDataset(val_list)
 train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False)
 
-model = CNNAutoencoder1D()
+model = CustomModel()
 
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)

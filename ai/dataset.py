@@ -6,7 +6,7 @@ import random
 from torch.utils.data import Dataset
 
 class AudioMelDataset(Dataset):
-    def __init__(self, file_list, sample_rate=44100, duration=3, num_mels=64):
+    def __init__(self, file_list, sample_rate=44100, duration=0.5, num_mels=64):
         self.file_list = file_list
         self.sample_rate = sample_rate
         self.target_length = int(sample_rate * duration)
@@ -51,5 +51,7 @@ class AudioMelDataset(Dataset):
         # Mel Spectrogram & log scale
         mel = self.mel_transform(waveform)  # (1, n_mels, T)
         mel_db = self.to_db(mel)
-        mel_db = mel_db.squeeze(0)[:, :-1]
+        mel_db = mel_db.squeeze(0)
+        mel_db = (mel_db + 80) / 80.0
+        
         return mel_db
